@@ -1,0 +1,99 @@
+sometimes, depending on different conditions we might have to load different
+versions of specific library.
+
+LOCAL_SHARED_LIBARARIES += libv1
+or
+LOCAL_SHARED_LIBARARIES += libv2
+or
+LOCAL_SHARED_LIBARARIES += libv3
+
+This compile method is not extendible, so we should use the run time method.
+1) depending on certain conditions load the library.
+2) load specific version of library ( v1/v2/v3).
+
+We assume libv1/libv2/libv3 provide similiar interface methods (or they have to ).
+-> lets say they provide 2 methods
+1) create.
+2) destroy.
+
+To use this in our module:
+1) dlopen the required library.
+2) dlsym the function pointers.
+3) close the library and uninitialize function pointers.
+
+Exposing methods:
+1) extern "C" ABC* create (XYZ* );
+	create method returns an instace of class/struct ABC and take argument of type
+	XYZ* 
+2) extern "C" void destroy(ABC* );
+	destroy method takes ABC* instance returned by create methods and returns nothing.
+	
+Note : extern "C" should be used in c++ to encounter name mangling done by compiler.
+
+
+
+in our Loader class, we want to dynamically load these libs .
+-> init method will load these .
+-> we will close the library handle in close method during destuction. 
+
+Loader.h
+
+class Loader {
+public :
+    Loader();
+	~Loader();
+private:
+	void init();
+	void close();
+	void *mLibraryHandle = nullptr;
+	using CreateInterface = ABC* (*)(XYZ*);
+	using DeleteInterface = void (*)(ABC*);
+	CreateInterface mCreate;
+	DeleteInterface mDelete;
+	XYZ * mXYZInstance;
+	ABC * mABCInstance;
+};
+
+Loader.cpp
+
+
+Loader::Loader() {
+	mXYZInstance = getXYZ(); //
+}
+
+void Loader::init() {
+//lets say we have 5 instances of libs, starting from v5 we try to load
+// As soon as successful loading is done, we break;
+
+ for (int i = 5; i >=1; i--) {
+	string libName = std::string("libtoload_v")+ std::to_string(i); }
+	mLibraryHandle = dlopen(libName.c_str(), 0);
+	if (mLibraryHandle == nullptr) // lib not found, so continue and search for next avial 
+	{
+		ALOGI("%s, try next", dlerror());
+		continue;
+	}
+	// if dlopen is successful, get the symbols.
+    mCreate = reinterpret_cast<CreateInterface>(dlsym(mLibraryHandle, "create"));
+    mDestroy = reinterpret_cast<DeleteInterface>(dlsym(mLibraryHandle, "destroy"));
+    if (mCreate == nullptr || mDestroy == nullptr){
+        close();
+        LOG_FATAL("could not find interface methods %s", dlerror());
+    }
+	mABCInstance = mCreate(mXYZInstance);
+}
+
+void Loader::close() {
+	mDestroy(mABCInstance);
+	if (mLibraryHandle != nullptr) {
+		dlclose(mLibraryHandle);
+	}
+	mLibraryHandle = nullptr;
+	mCreate = nullptr;
+	mDelete = nullptr;
+}
+
+Loader::Loader() {
+
+	close();
+}
