@@ -69,3 +69,124 @@ int main() {
     // auto aa = Attributes::Builder().setUsage(2).setType(3).build();
     // aa->print();
 }
+
+
+
+
+
+Here is another example of creating a computer with Builder pattern.
+
+
+class Computer {
+public:
+    //    friend class Builder;
+    class Builder;
+    private :
+        int mCPUs = 1;
+        int mGPU = 0;
+        bool mHasGrphics = false;
+        int mRam = 2; // 2GB
+        int mStorage = 512; // 512GB
+        int mPower = 2000; 
+
+        Computer() {
+            cout <<"computer created" <<endl;
+        }
+        public:
+        ~Computer() {
+            print();
+            cout <<"computer destroyed"<<endl;
+        }
+    public:
+        void print() {
+            cout <<" computer specification :" 
+                << " cpus " << mCPUs 
+                << " gpus " << mGPU
+                << " has graphics " << mHasGrphics
+                << " RAM " << mRam 
+                << " storage " << mStorage
+                << " mPower " << mPower
+                <<endl;
+        }
+
+};
+
+class Computer::Builder {
+    public:
+        Builder();
+        std::unique_ptr<Computer> build();
+        Builder& setCpus(int cpu);
+        Builder& setGpus(int gpu);
+        Builder& setGraphicsCard(bool hasGprahicsCard);
+        Builder& setRAM(int ram);
+        Builder& setStorage(int storage);
+        Builder& setPowerSupply(int supply);
+    private:
+        int mCPUs = 1;
+        int mGPU = 0;
+        bool mHasGrphics = false;
+        int mRam = 2; // 2GB
+        int mStorage = 512; // 512GB
+        int mPower = 2000;     
+};
+
+Computer::Builder::Builder() {
+    cout <<"builder created" <<endl;
+}
+
+Computer::Builder& Computer::Builder::setCpus(int cpu) {
+    mCPUs = cpu;
+    return *this;
+}
+
+Computer::Builder& Computer::Builder::setGpus(int gpu) {
+    mGPU = gpu;
+    return *this;
+}
+
+Computer::Builder& Computer::Builder::setGraphicsCard(bool hasGraphicsCard) {
+    mHasGrphics = hasGraphicsCard;
+    return *this;
+}
+
+Computer::Builder& Computer::Builder::setPowerSupply(int powerSupply) {
+    mPower = powerSupply;
+    return *this;
+}
+
+Computer::Builder& Computer::Builder::setRAM(int ram) {
+    mRam = ram;
+    return *this;
+}
+
+Computer::Builder& Computer::Builder::setStorage(int storage) {
+    mStorage = storage;
+    return *this;
+}
+
+std::unique_ptr<Computer>  Computer::Builder::build() {
+    std::unique_ptr<Computer> computer (new Computer());
+    computer->mCPUs = mCPUs;
+    computer->mGPU = mGPU;
+    computer->mHasGrphics = mHasGrphics;
+    computer->mPower = mPower;
+    computer->mRam = mRam;
+    computer->mStorage = mStorage;
+    return computer;
+}
+
+int main() {
+    Computer::Builder builder;
+    builder.setCpus(10);
+    builder.setGpus(4);
+    builder.setGraphicsCard(true);
+    builder.setPowerSupply(10000);
+    builder.setRAM(8);
+    builder.setStorage(1024);
+
+    auto comp = builder.build();
+    //comp->print();
+
+    auto obj2 = Computer::Builder().setCpus(10).setGpus(4).setGraphicsCard(true).setPowerSupply(4000).setRAM(200).setStorage(10000).build();
+    //obj2->print();
+}
