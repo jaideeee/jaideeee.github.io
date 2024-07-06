@@ -1,0 +1,71 @@
+When you want to create a complex object,
+1 way is to pass too many arguments in the constructor,
+have multiple constructors.
+this makes the code error prone.
+
+
+Other Method, is you create object step by step, so builder pattern can be used.
+
+// Builder will have the API to set underlying object's capabilities.
+// Make builder as friend class/ inner class.
+// return reference of builder in its API to provide chaining.
+// build API creates object for outer class.
+
+#include <iostream>
+#include <memory>
+
+using namespace std;
+
+class Attributes {
+    friend class Builder;
+    private :
+        int mType;
+        int mUsage;
+        Attributes() {}
+    public:
+        class Builder {
+            public :
+                Builder() {
+                    cout <<" builder";
+                }
+
+                std::unique_ptr<Attributes> build() {
+                    std::unique_ptr<Attributes> attr(new Attributes());
+                    attr->mUsage = mUsage;
+                    attr->mType = mType;
+                    return attr;
+                }
+
+                Builder& setUsage(int usage) {
+                    mUsage = usage;
+                    return *this;
+                }
+
+                Builder& setType(int type) {
+                    mType = type;
+                    return *this;
+                }
+            private:
+                int mUsage;
+                int mType;
+        };
+        
+    
+    int getType() { return mType;}
+    int getUsage() { return mUsage;}
+    void print() {
+        cout <<" type " << mType <<" usage " << mUsage <<endl;
+    }
+};
+
+int main() {
+    Attributes::Builder builder;
+    builder.setType(10);
+    builder.setUsage(20);
+    auto aa = builder.build();
+    aa->print();
+
+    // using with chaining
+    // auto aa = Attributes::Builder().setUsage(2).setType(3).build();
+    // aa->print();
+}
