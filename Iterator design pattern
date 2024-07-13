@@ -1,0 +1,159 @@
+/*
+
+Summary of Iterator Pattern Usage:
+Purpose: Use the Iterator pattern when you need to iterate over elements of a collection
+without exposing the internal structure to the client code.
+
+Implementation Approaches:
+
+Custom Iterator (hasNext()/next()):
+
+Implement custom iterator as an inner class of the collection.
+Provide methods like hasNext() and next() to control iteration over the collection's elements.
+Manages iteration state internally (e.g., index tracking for sequential access).
+Using begin()/end() Methods:
+
+Leverage begin() and end() methods provided by standard containers (e.g., std::vector, std::list) in the C++ Standard Library.
+Returns iterators (iterator or const_iterator) that encapsulate iteration logic (operator!=, operator++, operator*) for seamless traversal.
+No need for a separate inner iterator class; relies on STL iterator types.
+
+*/
+
+// can be implemented with 2 approaches next/hasNext
+// iterating over begin/ end
+
+// Let's say we have a HRSystem, which has multiple employees, and it wants to go over that.
+
+/*
++---------------------+                  +-----------------------+
+|     Aggregate       |                  |       Iterator        |
+|---------------------|                  |-----------------------|
+|                     |                  |                       |
+|  std::vector<int> data;  | 1. Iterator begin() |                       |
+|                     |------------------->|                       |
+|                     |                  | 3. hasNext()          |
+|                     |<-------------------|                       |
+|                     |                  | 4. next()             |
+|                     |<-------------------|                       |
+|                     |                  |                       |
++---------------------+                  +-----------------------+
+
+
+*/
+class Employee {
+    string mName;
+    int mId;
+    public :
+        Employee(string name, int id) {
+            mName = name;
+            mId = id;
+        }
+        string getName() {
+            return mName;
+        }
+        int getId() {
+            return mId;
+        }
+};
+
+//class Iterator;
+class HRSystem {
+    private :
+        std::vector<Employee> mEmpVec;
+
+    public:
+        //class Iterator;
+        void addEmployee(Employee emp) {
+            mEmpVec.push_back(emp);
+        }
+
+            class Iterator {
+            public:
+                Iterator(const HRSystem& hr) : hrSystem(hr), index(0) {}
+
+                bool hasNext() const {
+                    return index < hrSystem.mEmpVec.size();
+                }
+
+                const Employee& next() {
+                    return hrSystem.mEmpVec[index++];
+                }
+
+            private:
+                const HRSystem& hrSystem;
+                size_t index;
+            };
+
+            // Method to get iterator
+            Iterator begin() const {
+                return Iterator(*this);
+            }
+};
+
+
+// more CPP style iterator
+
+/*
+
++---------------------+                  +-----------------------+
+|     Aggregate       |                  |       Iterator        |
+|---------------------|                  |-----------------------|
+|                     | 1. std::vector<int>::iterator begin() |                       |
+|                     |------------------->|                       |
+|                     |                  | 3. operator!=()       |
+|                     |<-------------------|                       |
+|                     |                  | 4. operator++()       |
+|                     |<-------------------|                       |
+|                     |                  | 5. operator*()        |
+|                     |<-------------------|                       |
+|                     |                  |                       |
++---------------------+                  +-----------------------+
+
+
+*/
+class HRSystemCppStyle {
+    private :
+        std::vector<Employee> mEmpVec;
+
+    public:
+        //class Iterator;
+        void addEmployee(Employee emp) {
+            mEmpVec.push_back(emp);
+        }
+
+            // Method to get iterator
+        std::vector<Employee>::iterator begin() {
+                return mEmpVec.begin();
+        }
+
+        std::vector<Employee>::iterator end() {
+                return mEmpVec.end();
+        }
+};
+
+int main() {
+    HRSystem hrs;
+    Employee e1("ABC", 1);
+    Employee e2("DEF", 2);
+
+    hrs.addEmployee(e1);
+    hrs.addEmployee(e2);
+
+    HRSystem::Iterator itr = hrs.begin();
+    while (itr.hasNext()) {
+        auto emp = itr.next();
+        cout <<" emp details :: " << emp.getId() << " " << emp.getName() <<endl;
+    }
+
+    HRSystemCppStyle hrscpp;
+    Employee e3("JKL", 1);
+    Employee e4("XYZ", 2);
+
+    hrscpp.addEmployee(e3);
+    hrscpp.addEmployee(e4);
+
+    for (auto itr = hrscpp.begin(); itr != hrscpp.end(); itr++) {
+        cout <<" emp details :: " << itr->getId() << " " << itr->getName() <<endl;        
+    }
+
+}
