@@ -1,3 +1,26 @@
+  +-------------+        +------------------+
+  |   Client    |        |     Builder      |
+  +-------------+        +------------------+
+       |                      |
+       | uses                 | constructs
+       |                      |
+  +----v----------------------v----+
+  |          ProductBuilder         |
+  +--------------------------------+
+  | + build()                      |
+  | + setProperty1(type)           |
+  | + setProperty2(type)           |
+  | + ...                          |
+  +-------------^------------------+
+                |
+         +------v------+
+         |             |
+         |   Product   |
+         |             |
+         +-------------+
+
+
+
 When you want to create a complex object,
 1 way is to pass too many arguments in the constructor,
 have multiple constructors.
