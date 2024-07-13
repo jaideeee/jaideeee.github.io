@@ -15,22 +15,30 @@ functionality in software systems.
 
 /*
 
-Invoker (Application)        Receiver (Document)
-   +---------+                +-----------+
-   |execute()|                | open()    |
-   |queue()  |                | save()    |
-   |undo()   |                | print()   |
-   +---------+                +-----------+
-        ^                           ^
-        |                           |
-        |                           |
- +----------------+           +-------------------+
- | Command        |           | Concrete Commands |
- +----------------+           +-------------------+
- | +execute()    |           | +OpenCommand      |
- | +undo()       |           | +SaveCommand      |
- +----------------+           | +PrintCommand     |
-                              +-------------------+
+  +-------------+        +------------+
+  |   Client    |        | Application|
+  +-------------+        +------------+
+       |                      |
+       | uses                 | invokes
+       |                      |
+  +----v----------------------v----+
+  |          Command Interface     |
+  +--------------------------------+
+  | + execute()                    |
+  +-------------^------------------+
+                |
+         +------v------+
+         |             |
+         |  Concrete   |
+         |  Command    |
+         |             |
+         +-------------+
+                |
+         +------v------+
+         |             |
+         |  Resource   |
+         |             |
+         +-------------+
 
 
 */
