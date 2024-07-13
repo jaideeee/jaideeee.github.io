@@ -43,6 +43,9 @@ functionality in software systems.
 
 */
 
+1) This article starts with basic command pattern implementation
+2) Then it adds a undo functionality for the commands
+3) provides a mechanism to queue the commands and later process those.
 
 Basic Example of Command Pattern
 
