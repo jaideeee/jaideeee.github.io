@@ -1,0 +1,464 @@
+*/
+
+/*
+
+The Command Pattern is a behavioral design pattern that focuses on encapsulating a request as
+an object, thereby decoupling the sender of the request from the receiver. This pattern 
+allows you to parameterize objects with commands, delay or queue a request’s execution, and 
+support undoable operations. It’s a fundamental pattern for implementing a wide range of 
+functionality in software systems.
+
+*/
+
+// You have an application (invoker), which works on some kind of resource (reciever )
+// you use some concrete commands derived from ICommand
+
+/*
+
+Invoker (Application)        Receiver (Document)
+   +---------+                +-----------+
+   |execute()|                | open()    |
+   |queue()  |                | save()    |
+   |undo()   |                | print()   |
+   +---------+                +-----------+
+        ^                           ^
+        |                           |
+        |                           |
+ +----------------+           +-------------------+
+ | Command        |           | Concrete Commands |
+ +----------------+           +-------------------+
+ | +execute()    |           | +OpenCommand      |
+ | +undo()       |           | +SaveCommand      |
+ +----------------+           | +PrintCommand     |
+                              +-------------------+
+
+
+*/
+
+
+Basic Example of Command Pattern
+
+
+<--------------  Basic example starts ------------------------->
+
+class IDocument {
+    public:
+     virtual ~IDocument() {}
+     virtual void open() = 0;
+     virtual void save() = 0;
+     virtual void print() = 0;
+};
+
+class ICommand {
+    public:
+    virtual ~ ICommand() {}
+    virtual void execute() = 0;
+};
+
+class CommandOpen : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandOpen(std::shared_ptr<IDocument> & document) {
+                mDoc = document;
+        }
+
+        void execute() {
+            mDoc->open();
+        }
+};
+
+class CommandPrint : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandPrint(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->print();
+        }
+};
+
+class CommandSave : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandSave(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->save();
+        }
+};
+
+class TextDocument : public IDocument {
+    public:
+        TextDocument() {
+            cout <<"text document created " <<endl;
+        }
+     ~TextDocument() {}
+     void open() {
+        cout << " opened " <<endl;
+     }
+     void save() {
+        cout << " saved " <<endl;
+     }
+     void print() {
+        cout << " printed " <<endl;
+     }
+};
+
+class Application {
+    std::shared_ptr<IDocument> mDoc;
+    
+    public:
+        Application() {
+            mDoc = make_shared<TextDocument>();
+        }
+
+        void open() {
+            CommandOpen co(mDoc);
+            co.execute();
+        }
+
+        void save() {
+            CommandSave cs(mDoc);
+            cs.execute();
+        }
+
+        void print() {
+            CommandPrint cp(mDoc);
+            cp.execute();
+        }
+
+};
+
+int main() {
+    cout <<" main starting " <<endl;
+    Application app;
+    app.open();
+    app.save();
+    app.print();
+}
+
+<--------------- basic example end ------------------->
+
+
+// Let's say now we want to support a undo command
+
+class IDocument {
+    public:
+     virtual ~IDocument() {}
+     virtual void open() = 0;
+     virtual void save() = 0;
+     virtual void print() = 0;
+};
+
+class ICommand {
+    public:
+    virtual ~ ICommand() {}
+    virtual void execute() = 0;
+    virtual void undo() = 0; // <------ New Introduction ------>
+};
+
+class CommandOpen : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandOpen(std::shared_ptr<IDocument> & document) {
+                mDoc = document;
+        }
+
+        void execute() {
+            mDoc->open();
+        }
+        //<------ New Introduction ------>
+        void undo() {
+            cout <<" undo open" <<endl;
+        }
+};
+
+class CommandPrint : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandPrint(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->print();
+        }
+        //<------ New Introduction ------>
+        void undo() {
+            cout <<" undo print" <<endl;
+        }
+};
+
+class CommandSave : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandSave(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->save();
+        }
+        //<------ New Introduction ------>
+        void undo() {
+            cout <<" undo save" <<endl;
+        }
+};
+
+class TextDocument : public IDocument {
+    public:
+        TextDocument() {
+            cout <<"text document created " <<endl;
+        }
+     ~TextDocument() {}
+     void open() {
+        cout << " opened " <<endl;
+     }
+     void save() {
+        cout << " saved " <<endl;
+     }
+     void print() {
+        cout << " printed " <<endl;
+     }
+};
+
+// Task is to undo commands 1 by 1 as they were executed..
+
+// Track the commands, LIFO, use a stack to track command
+
+class Application {
+    std::shared_ptr<IDocument> mDoc;
+    
+    std::stack <std::shared_ptr<ICommand>> mCommandHistory;
+
+    public:
+        Application() {
+            mDoc = make_shared<TextDocument>();
+        }
+
+        void open() {
+            std::shared_ptr<ICommand> command = make_shared<CommandOpen>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void save() {
+            std::shared_ptr<ICommand> command = make_shared<CommandSave>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void print() {
+            std::shared_ptr<ICommand> command = make_shared<CommandPrint>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void undoAllCommands() {
+            while (!mCommandHistory.empty()) {
+                auto command = mCommandHistory.top();
+                command->undo();
+                mCommandHistory.pop();
+            }
+        }
+
+};
+
+int main() {
+    cout <<" main starting " <<endl;
+    Application app;
+    app.open();
+    app.save();
+    app.print();
+
+    app.undoAllCommands();
+}
+
+
+<--------------- end of undo command ----------------------->
+
+
+Lets now we want to support some queueing of the commands
+
+// we simply change some parts in application, no need to touch underyling command, Document classes.
+
+
+
+class IDocument {
+    public:
+     virtual ~IDocument() {}
+     virtual void open() = 0;
+     virtual void save() = 0;
+     virtual void print() = 0;
+};
+
+class ICommand {
+    public:
+    virtual ~ ICommand() {}
+    virtual void execute() = 0;
+    virtual void undo() = 0; // <------ New Introduction ------>
+};
+
+class CommandOpen : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandOpen(std::shared_ptr<IDocument> & document) {
+                mDoc = document;
+        }
+
+        void execute() {
+            mDoc->open();
+        }
+
+        void undo() {
+            cout <<" undo open" <<endl;
+        }
+};
+
+class CommandPrint : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandPrint(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->print();
+        }
+
+        void undo() {
+            cout <<" undo print" <<endl;
+        }
+};
+
+class CommandSave : public ICommand {
+    private:
+        std::shared_ptr<IDocument> mDoc;
+    public:
+        CommandSave(std::shared_ptr<IDocument> & document) {
+            mDoc = document;
+        }
+
+        void execute() {
+            mDoc->save();
+        }
+
+        void undo() {
+            cout <<" undo save" <<endl;
+        }
+};
+
+class TextDocument : public IDocument {
+    public:
+        TextDocument() {
+            cout <<"text document created " <<endl;
+        }
+     ~TextDocument() {}
+     void open() {
+        cout << " opened " <<endl;
+     }
+     void save() {
+        cout << " saved " <<endl;
+     }
+     void print() {
+        cout << " printed " <<endl;
+     }
+};
+
+// Task is to undo commands 1 by 1 as they were executed..
+
+// Track the commands, LIFO, use a stack to track command
+
+// Add a functionality of queuing.
+// from main commands can be queued and later processed 1 by 1
+
+// we can track a queue of commands and then call items based on process.
+class Application {
+    std::shared_ptr<IDocument> mDoc;
+    
+    std::stack <std::shared_ptr<ICommand>> mCommandHistory;
+
+    std::queue<std::shared_ptr<ICommand>> mCommandQueue;
+
+    // queue commands are strings, so need a mapper with command obj
+
+    std::unordered_map<std::string, std::shared_ptr<ICommand>> mCommandMap;
+
+    public:
+        Application() {
+            mDoc = make_shared<TextDocument>();
+            mCommandMap["open"] = make_shared<CommandOpen>(mDoc);
+            mCommandMap["save"] = make_shared<CommandSave>(mDoc);
+            mCommandMap["print"] = make_shared<CommandPrint>(mDoc);
+        }
+
+        void open() {
+            std::shared_ptr<ICommand> command = make_shared<CommandOpen>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void save() {
+            std::shared_ptr<ICommand> command = make_shared<CommandSave>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void print() {
+            std::shared_ptr<ICommand> command = make_shared<CommandPrint>(mDoc);
+            command->execute();
+            mCommandHistory.push(command);
+        }
+
+        void undoAllCommands() {
+            while (!mCommandHistory.empty()) {
+                auto command = mCommandHistory.top();
+                command->undo();
+                mCommandHistory.pop();
+            }
+        }
+
+        void queueCommand(string command) {
+            cout << "queue command " << command <<endl;
+            if (mCommandMap.count(command)) {
+                mCommandQueue.push(mCommandMap[command]);
+            } else {
+                cout <<" invalid comamnd " << command <<endl;
+            }
+        }
+
+        void processCommands() {
+            cout <<" process commands " <<endl;
+            while (!mCommandQueue.empty()) {
+                auto front = mCommandQueue.front();
+                front->execute();
+                mCommandHistory.push(front);
+                mCommandQueue.pop();
+            }
+        }
+
+};
+
+int main() {
+    cout <<" main starting " <<endl;
+    Application app;
+    app.queueCommand("open");
+    app.queueCommand("open");
+    app.queueCommand("save");
+    app.queueCommand("print");
+
+    app.processCommands();
+    app.undoAllCommands();
+}
